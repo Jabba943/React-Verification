@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 import OcrScanner from "./components/OcrScanner";
 import QrScanner from "./components/QrScanner";
+import createHmacSHA512 from "../scripts/crypto.js";
 
 // CSS-Styles direkt im File für die Einfachheit deiner CSS-Vorgaben
 const styles = {
@@ -60,17 +61,13 @@ function MainApp() {
     const textNormalisiert = ocrText.replace(/\s+/g, "");
     const qrNormalisiert = qrContent.replace(/\s+/g, "");
 
-    console.log(textNormalisiert);
-    console.log(qrNormalisiert);
-
-    return textNormalisiert.includes(qrNormalisiert);
+    return createHmacSHA512(textNormalisiert, "test").includes(qrNormalisiert);
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={{ textAlign: "center" }}>Prüf-Assistent</h1>
+      <h1 style={{ textAlign: "center" }}>Dokumenten-Prüfer</h1>
 
-      {/* SCHRITT 1: OCR */}
       {step === 1 && (
         <div style={styles.box}>
           <h2>📷 Schritt 1: Dokument scannen</h2>
@@ -78,7 +75,6 @@ function MainApp() {
         </div>
       )}
 
-      {/* SCHRITT 2: QR-CODE */}
       {step === 2 && (
         <div style={styles.box}>
           <h2>🔍 Schritt 2: QR-Code scannen</h2>
@@ -93,9 +89,9 @@ function MainApp() {
             <h2>📊 Schritt 3: Ergebnis des Abgleichs</h2>
 
             {checkMatch() ? (
-              <div style={styles.success}>✓ PASST ZUSAMMEN!</div>
+              <div style={styles.success}>✓ ORIGINAL DOKUMENT</div>
             ) : (
-              <div style={styles.error}>❌ PASST NICHT ZUSAMMEN!</div>
+              <div style={styles.error}>❌ DOKUMENT WURDE ANGEPASST</div>
             )}
 
             <p>
