@@ -40,16 +40,12 @@ export default function QrScanner({ onScanComplete }) {
         });
     }
 
-    function onScanFailure() {
-      // Absichtlich leer lassen
-    }
+    function onScanFailure() {}
 
     html5QrcodeScanner.render(onScanSuccess, onScanFailure);
 
     // Clean-up beim Verlassen der Komponente
     return () => {
-      // Wir löschen nicht sofort, sondern warten 50ms.
-      // Wenn es nur der StrictMode-Wechsel war, wird dieser Timeout oben gecancelt.
       cleanupTimeoutRef.current = setTimeout(() => {
         if (scannerRef.current) {
           console.log("Scanner wird sauber beendet...");

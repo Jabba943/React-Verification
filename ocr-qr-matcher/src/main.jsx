@@ -2,9 +2,10 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 import OcrScanner from "./components/OcrScanner";
 import QrScanner from "./components/QrScanner";
-import createHmacSHA512 from "../scripts/crypto.js";
+import CreateQR from "./components/CreateQR"; // NEU: Import der QR-Generierungs-Komponente
+import { createHmacSHA512 } from "./scripts/crypto.js";
 
-// CSS-Styles direkt im File für die Einfachheit deiner CSS-Vorgaben
+// Einheitliche CSS-Styles direkt im File
 const styles = {
   container: {
     fontFamily: "'Segoe UI', sans-serif",
@@ -32,93 +33,200 @@ const styles = {
     textAlign: "left",
     boxSizing: "border-box",
   },
+  // Basis-Button Style
+  button: {
+    padding: "10px 20px",
+    fontSize: "16px",
+    cursor: "pointer",
+    margin: "10px 5px",
+    borderRadius: "4px",
+    border: "none",
+    color: "white",
+    fontWeight: "500",
+    transition: "background-color 0.2s",
+  },
+  // Button-Farbvarianten
+  btnPrimary: { backgroundColor: "#007BFF" },
+  btnSuccess: { backgroundColor: "#28A745" },
+  btnSecondary: { backgroundColor: "#6c757d", marginBottom: "20px" },
+
+  success: {
+    color: "green",
+    fontWeight: "bold",
+    margin: "10px 0",
+  },
+  error: {
+    color: "red",
+    fontWeight: "bold",
+    margin: "10px 0",
+  },
 };
 
 // eslint-disable-next-line react-refresh/only-export-components
 function MainApp() {
+  // Modus-State für das Hauptmenü ("select", "verifizieren", "ausstellen")
+  const [mode, setMode] = useState("select");
+
+  // Scan-Vorgangs-States
   const [step, setStep] = useState(1);
   const [ocrText, setOcrText] = useState("");
   const [qrContent, setQrContent] = useState("");
 
   const handleOcrFinished = (text) => {
     setOcrText(text);
-    setStep(2); // Wechsel zu QR-Scanner
+    setStep(2);
   };
 
   const handleQrFinished = (code) => {
     setQrContent(code);
-    setStep(3); // Wechsel zum Abgleich
+    setStep(3);
   };
 
+  // Setzt den Scan-Vorgang zurück
   const handleReset = () => {
     setOcrText("");
     setQrContent("");
     setStep(1);
   };
 
+  // Setzt alles zurück und geht ins Hauptmenü
+  const handleBackToMenu = () => {
+    handleReset();
+    setMode("select");
+  };
+
   // Textabgleich-Funktion
   const checkMatch = () => {
     const textNormalisiert = ocrText.replace(/\s+/g, "");
     const qrNormalisiert = qrContent.replace(/\s+/g, "");
-
-    return createHmacSHA512(textNormalisiert, "test").includes(qrNormalisiert);
+    return createHmacSHA512(textNormalisiert).includes(qrNormalisiert);
   };
 
   return (
     <div style={styles.container}>
-      <h1 style={{ textAlign: "center" }}>Dokumenten-Prüfer</h1>
+      <h1 style={{ textAlign: "center" }}>Dokumenten-System</h1>
 
-      {step === 1 && (
+      {/* --- STARTMENÜ --- */}
+      {mode === "select" && (
         <div style={styles.box}>
-          <h2>📷 Schritt 1: Dokument scannen</h2>
-          <OcrScanner onScanComplete={handleOcrFinished} />
-        </div>
-      )}
-
-      {step === 2 && (
-        <div style={styles.box}>
-          <h2>🔍 Schritt 2: QR-Code scannen</h2>
-          <QrScanner onScanComplete={handleQrFinished} />
-        </div>
-      )}
-
-      {/* SCHRITT 3: TEXTAUSGABE & VERGLEICH */}
-      {step === 3 && (
-        <div>
-          <div style={styles.box}>
-            <h2>📊 Schritt 3: Ergebnis des Abgleichs</h2>
-
-            {checkMatch() ? (
-              <div style={styles.success}>✓ ORIGINAL DOKUMENT</div>
-            ) : (
-              <div style={styles.error}>❌ DOKUMENT WURDE ANGEPASST</div>
-            )}
-
-            <p>
-              Der QR-Inhalt wurde im Dokument{" "}
-              {checkMatch() ? "gefunden" : "nicht gefunden"}.
-            </p>
-          </div>
-
-          <div style={styles.box}>
-            <h3>Gescannter Text aus Dokument:</h3>
-            <div style={styles.output}>{ocrText}</div>
-
-            <h3>QR-Code Inhalt:</h3>
-            <div
-              style={{
-                ...styles.output,
-                minHeight: "auto",
-                fontWeight: "bold",
-              }}
+          <h2>Bitte wählen Sie eine Option:</h2>
+          <div>
+            <button
+              style={{ ...styles.button, ...styles.btnPrimary }}
+              onClick={() => setMode("verifizieren")}
             >
-              {qrContent}
-            </div>
-
-            <button onClick={handleReset} style={styles.button}>
-              🔄 Neuen Scan starten
+              Verifizieren
+            </button>
+            <button
+              style={{ ...styles.button, ...styles.btnSuccess }}
+              onClick={() => setMode("ausstellen")}
+            >
+              Ausstellen
             </button>
           </div>
+        </div>
+      )}
+
+      {/* --- MODUS: AUSSTELLEN --- */}
+      {mode === "ausstellen" && (
+        <div>
+          <button
+            style={{ ...styles.button, ...styles.btnSecondary }}
+            onClick={handleBackToMenu}
+          >
+            🔙 Zurück zum Menü
+          </button>
+          <h1 style={{ textAlign: "center" }}>📄 Dokument ausstellen</h1>
+
+          {step === 1 && (
+            <div style={styles.box}>
+              <h2>📷 Schritt 1: Dokument scannen</h2>
+              <OcrScanner onScanComplete={handleOcrFinished} />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={styles.box}>
+              <h2>✨ Schritt 2: Gesicherten QR-Code generieren</h2>
+              {/* Hier übergeben wir den ocrText an deine neue Komponente */}
+              <CreateQR
+                text={ocrText}
+                buttonStyle={styles.button}
+                primaryButtonStyle={styles.btnPrimary}
+                successButtonStyle={styles.btnSuccess}
+                onReset={handleReset}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- MODUS: VERIFIZIEREN --- */}
+      {mode === "verifizieren" && (
+        <div>
+          <button
+            style={{ ...styles.button, ...styles.btnSecondary }}
+            onClick={handleBackToMenu}
+          >
+            🔙 Zurück zum Menü
+          </button>
+          <h1 style={{ textAlign: "center" }}>📄 Dokument verifizieren</h1>
+
+          {step === 1 && (
+            <div style={styles.box}>
+              <h2>📷 Schritt 1: Dokument scannen</h2>
+              <OcrScanner onScanComplete={handleOcrFinished} />
+            </div>
+          )}
+
+          {step === 2 && (
+            <div style={styles.box}>
+              <h2>🔍 Schritt 2: QR-Code scannen</h2>
+              <QrScanner onScanComplete={handleQrFinished} />
+            </div>
+          )}
+
+          {step === 3 && (
+            <div>
+              <div style={styles.box}>
+                <h2>📊 Schritt 3: Ergebnis des Abgleichs</h2>
+
+                {checkMatch() ? (
+                  <div style={styles.success}>✓ ORIGINAL DOKUMENT</div>
+                ) : (
+                  <div style={styles.error}>❌ DOKUMENT WURDE ANGEPASST</div>
+                )}
+
+                <p>
+                  Der QR-Inhalt wurde im Dokument{" "}
+                  {checkMatch() ? "gefunden" : "nicht gefunden"}.
+                </p>
+              </div>
+
+              <div style={styles.box}>
+                <h3>Gescannter Text aus Dokument:</h3>
+                <div style={styles.output}>{ocrText}</div>
+
+                <h3>QR-Code Inhalt:</h3>
+                <div
+                  style={{
+                    ...styles.output,
+                    minHeight: "auto",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {qrContent}
+                </div>
+
+                <button
+                  onClick={handleReset}
+                  style={{ ...styles.button, ...styles.btnPrimary }}
+                >
+                  🔄 Neuen Scan starten
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
