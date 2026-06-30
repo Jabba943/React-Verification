@@ -95,11 +95,16 @@ function MainApp() {
     setMode("select");
   };
 
-  // Textabgleich-Funktion
-  const checkMatch = () => {
+  //Hashfunktion incl. Textbereinigung
+  const getOcrHash = () => {
     const textNormalisiert = ocrText.replace(/\s+/g, "");
+    return createHmacSHA512(textNormalisiert);
+  };
+
+  // Textabgleich-Funktion nutzt jetzt die neue Hash-Funktion
+  const checkMatch = () => {
     const qrNormalisiert = qrContent.replace(/\s+/g, "");
-    return createHmacSHA512(textNormalisiert).includes(qrNormalisiert);
+    return getOcrHash().includes(qrNormalisiert);
   };
 
   return (
@@ -205,7 +210,7 @@ function MainApp() {
 
               <div style={styles.box}>
                 <h3>Gescannter Text aus Dokument:</h3>
-                <div style={styles.output}>{ocrText}</div>
+                <div style={styles.output}>{getOcrHash()}</div>
 
                 <h3>QR-Code Inhalt:</h3>
                 <div
