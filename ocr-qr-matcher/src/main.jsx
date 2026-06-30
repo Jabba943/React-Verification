@@ -210,7 +210,7 @@ function MainApp() {
 
               <div style={styles.box}>
                 <h3>Gescannter Text aus Dokument:</h3>
-                <div style={styles.output}>{getOcrHash()}</div>
+                <div style={styles.output}>{ocrText}</div>
 
                 <h3>QR-Code Inhalt:</h3>
                 <div
