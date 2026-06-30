@@ -48,9 +48,6 @@ export default function OcrScanner({ onScanComplete }) {
     canvas.height = video.videoHeight;
     const ctx = canvas.getContext("2d");
 
-    // Spiegelung korrigieren
-    ctx.translate(canvas.width, 0);
-    ctx.scale(1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageDataUrl = canvas.toDataURL("image/jpeg");
