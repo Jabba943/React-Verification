@@ -153,7 +153,6 @@ function MainApp() {
           {step === 2 && (
             <div style={styles.box}>
               <h2>✨ Schritt 2: Gesicherten QR-Code generieren</h2>
-              {/* Hier übergeben wir den ocrText an deine neue Komponente */}
               <CreateQR
                 text={ocrText}
                 buttonStyle={styles.button}
