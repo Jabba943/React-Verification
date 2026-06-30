@@ -50,7 +50,7 @@ export default function OcrScanner({ onScanComplete }) {
 
     // Spiegelung korrigieren
     ctx.translate(canvas.width, 0);
-    ctx.scale(1, 1);
+    ctx.scale(-1, 1);
     ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
     const imageDataUrl = canvas.toDataURL("image/jpeg");
@@ -96,7 +96,6 @@ export default function OcrScanner({ onScanComplete }) {
           maxWidth: "400px",
           borderRadius: "8px",
           background: "#000",
-          transform: "scaleX(-1)",
         }}
       />
 
