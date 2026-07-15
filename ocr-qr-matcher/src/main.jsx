@@ -104,7 +104,7 @@ function MainApp() {
   // Textabgleich-Funktion nutzt jetzt die neue Hash-Funktion
   const checkMatch = () => {
     const qrNormalisiert = qrContent.replace(/\s+/g, "");
-    return getOcrHash().includes(qrNormalisiert);
+    return qrNormalisiert !== "" && getOcrHash() === qrNormalisiert;
   };
 
   return (
