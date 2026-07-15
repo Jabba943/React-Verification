@@ -3,6 +3,28 @@ import { useEffect, useRef, useState } from "react";
 // Größere Fotos bringen kaum mehr Genauigkeit, machen Tesseract aber deutlich langsamer
 const MAX_DIMENSION = 2200;
 
+// Wörter unterhalb dieser Konfidenz (0-100) sind meist Kauderwelsch aus dem
+// Bildhintergrund und werden aus dem Ergebnis entfernt.
+const MIN_WORD_CONFIDENCE = 40;
+
+// Baut den Text zeilenweise aus den Wörtern wieder zusammen und lässt dabei
+// Wörter mit niedriger Erkennungs-Konfidenz weg.
+function filterLowConfidenceText(data) {
+  if (!data.lines || data.lines.length === 0) {
+    return data.text;
+  }
+
+  return data.lines
+    .map((line) =>
+      line.words
+        .filter((word) => word.confidence >= MIN_WORD_CONFIDENCE)
+        .map((word) => word.text)
+        .join(" "),
+    )
+    .filter((line) => line.trim() !== "")
+    .join("\n");
+}
+
 export default function OcrScanner({ onScanComplete }) {
   const fileInputRef = useRef(null);
   const canvasRef = useRef(null);
@@ -14,7 +36,10 @@ export default function OcrScanner({ onScanComplete }) {
   const [progress, setProgress] = useState(0);
   const [previewSrc, setPreviewSrc] = useState(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
+  const [recognizedText, setRecognizedText] = useState(null);
 
+  // Worker wird einmalig erzeugt (inkl. Sprachdaten-Download) und über
+  // mehrere Aufnahmen hinweg wiederverwendet.
   useEffect(() => {
     return () => {
       if (workerRef.current) {
@@ -64,6 +89,8 @@ export default function OcrScanner({ onScanComplete }) {
       canvas.height = Math.round(image.height * scale);
 
       const ctx = canvas.getContext("2d");
+      // Graustufen + Kontrastanhebung verbessern die Trefferquote von
+      // Tesseract bei Handyfotos mit ungleichmäßiger Beleuchtung spürbar.
       ctx.filter = "grayscale(1) contrast(1.35) brightness(1.05)";
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
@@ -77,6 +104,7 @@ export default function OcrScanner({ onScanComplete }) {
 
   function handleRetake() {
     setPreviewSrc(null);
+    setRecognizedText(null);
     setProgress(0);
     setStatus("Bitte fotografiere das Dokument mit deiner Handykamera.");
   }
@@ -89,7 +117,7 @@ export default function OcrScanner({ onScanComplete }) {
     try {
       const worker = await getWorker();
       const result = await worker.recognize(canvasRef.current);
-      const erkannterText = result.data.text || "";
+      const erkannterText = filterLowConfidenceText(result.data).trim();
 
       if (erkannterText.trim() === "") {
         setStatus(
@@ -97,8 +125,9 @@ export default function OcrScanner({ onScanComplete }) {
         );
         setIsRecognizing(false);
       } else {
-        setStatus("✅ Erkennung abgeschlossen!");
-        onScanComplete(erkannterText);
+        setStatus("Bitte den erkannten Text prüfen und bei Bedarf korrigieren.");
+        setRecognizedText(erkannterText);
+        setIsRecognizing(false);
       }
     } catch (error) {
       console.error(error);
@@ -107,12 +136,19 @@ export default function OcrScanner({ onScanComplete }) {
     }
   }
 
+  function handleConfirmText() {
+    onScanComplete(recognizedText);
+  }
+
   return (
     <div className="box">
-      <p>
-        Fotografiere das Dokument mit der Kamera deines Smartphones. Achte auf
-        gute Beleuchtung, einen scharfen Fokus und einen planen Aufnahmewinkel.
-      </p>
+      {recognizedText === null && (
+        <p>
+          Fotografiere das Dokument mit der Kamera deines Smartphones. Achte
+          auf gute Beleuchtung, einen scharfen Fokus und einen planen
+          Aufnahmewinkel.
+        </p>
+      )}
 
       <input
         ref={fileInputRef}
@@ -123,7 +159,67 @@ export default function OcrScanner({ onScanComplete }) {
         style={{ display: "none" }}
       />
 
-      {!previewSrc ? (
+      {recognizedText !== null ? (
+        <div style={{ textAlign: "left" }}>
+          <p style={{ textAlign: "center" }}>
+            Bitte den erkannten Text prüfen und Fehler korrigieren, bevor er
+            weiterverwendet wird:
+          </p>
+          <textarea
+            value={recognizedText}
+            onChange={(e) => setRecognizedText(e.target.value)}
+            rows={10}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "10px",
+              fontFamily: "monospace",
+              fontSize: "14px",
+              borderRadius: "4px",
+              border: "1px solid #ccd6e0",
+              resize: "vertical",
+            }}
+          />
+
+          <div
+            style={{
+              display: "flex",
+              gap: "10px",
+              marginTop: "10px",
+              justifyContent: "center",
+            }}
+          >
+            <button
+              onClick={handleRetake}
+              style={{
+                backgroundColor: "#6c757d",
+                color: "white",
+                padding: "10px 16px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+              }}
+            >
+              🔄 Neu fotografieren
+            </button>
+            <button
+              onClick={handleConfirmText}
+              disabled={recognizedText.trim() === ""}
+              style={{
+                backgroundColor: "#28A745",
+                color: "white",
+                padding: "10px 16px",
+                border: "none",
+                borderRadius: "4px",
+                cursor: recognizedText.trim() === "" ? "default" : "pointer",
+                opacity: recognizedText.trim() === "" ? 0.6 : 1,
+              }}
+            >
+              ✅ Text bestätigen
+            </button>
+          </div>
+        </div>
+      ) : !previewSrc ? (
         <button
           onClick={() => fileInputRef.current?.click()}
           style={{
@@ -191,11 +287,13 @@ export default function OcrScanner({ onScanComplete }) {
         </div>
       )}
 
-      <div style={{ fontWeight: "bold", color: "#0066cc", margin: "15px 0" }}>
-        {progress > 0 && progress < 100
-          ? `🔄 Erkenne Text: ${progress}%`
-          : status}
-      </div>
+      {recognizedText === null && (
+        <div style={{ fontWeight: "bold", color: "#0066cc", margin: "15px 0" }}>
+          {progress > 0 && progress < 100
+            ? `🔄 Erkenne Text: ${progress}%`
+            : status}
+        </div>
+      )}
 
       <canvas ref={canvasRef} style={{ display: "none" }} />
     </div>
