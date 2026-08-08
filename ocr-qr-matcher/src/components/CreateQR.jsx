@@ -1,6 +1,6 @@
 import { useState } from "react";
 import QRCode from "qrcode";
-import { createHmacSHA512 } from "../scripts/crypto.js"; // Importiert deine Krypto-Funktion
+import { createHmacSHA512 } from "../scripts/crypto.js";
 import "../styles/CreateQR.css";
 
 function CreateQR({ text, onReset }) {
@@ -11,14 +11,9 @@ function CreateQR({ text, onReset }) {
     if (!text) return;
 
     try {
-      // 1. Text exakt so normalisieren wie beim Verifizieren
       const textNormalisiert = text.replace(/\s+/g, "");
-
-      // 2. Den HMAC-Hash erzeugen
       const hash = createHmacSHA512(textNormalisiert);
       setGeneratedHash(hash);
-
-      // 3. Den QR-Code aus dem HASH generieren (hohe Auflösung für den Druck)
       const response = await QRCode.toDataURL(hash, {
         width: 600,
         margin: 2,

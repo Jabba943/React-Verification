@@ -1,18 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import "../styles/OcrScanner.css";
 
-// Größere Fotos bringen kaum mehr Genauigkeit, machen Tesseract aber deutlich
-// langsamer. Eine ganze Dokumentseite (z. B. ein Zeugnis) enthält aber mehr
-// und kleiner gedruckten Text als ein einzelnes Feld, daher braucht sie eine
-// höhere Auflösung als ein einfacher Bildausschnitt.
 const MAX_DIMENSION = 3000;
-
-// Wörter unterhalb dieser Konfidenz (0-100) sind meist Kauderwelsch aus dem
-// Bildhintergrund und werden aus dem Ergebnis entfernt.
 const MIN_WORD_CONFIDENCE = 40;
 
-// Baut den Text zeilenweise aus den Wörtern wieder zusammen und lässt dabei
-// Wörter mit niedriger Erkennungs-Konfidenz weg.
 function filterLowConfidenceText(data) {
   if (!data.lines || data.lines.length === 0) {
     return data.text;
@@ -42,8 +33,6 @@ export default function OcrScanner({ onScanComplete }) {
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [recognizedText, setRecognizedText] = useState(null);
 
-  // Worker wird einmalig erzeugt (inkl. Sprachdaten-Download) und über
-  // mehrere Aufnahmen hinweg wiederverwendet.
   useEffect(() => {
     return () => {
       if (workerRef.current) {
@@ -55,7 +44,7 @@ export default function OcrScanner({ onScanComplete }) {
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
-    event.target.value = ""; // erlaubt erneute Auswahl derselben Datei
+    event.target.value = "";
     if (!file) return;
 
     const objectUrl = URL.createObjectURL(file);
@@ -71,8 +60,6 @@ export default function OcrScanner({ onScanComplete }) {
       canvas.height = Math.round(image.height * scale);
 
       const ctx = canvas.getContext("2d");
-      // Graustufen + Kontrastanhebung verbessern die Trefferquote von
-      // Tesseract bei Handyfotos mit ungleichmäßiger Beleuchtung spürbar.
       ctx.filter = "grayscale(1) contrast(1.35) brightness(1.05)";
       ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
@@ -153,10 +140,9 @@ export default function OcrScanner({ onScanComplete }) {
     <div className="app-box">
       {recognizedText === null && (
         <p>
-          Fotografiere die gesamte Dokumentseite (z. B. ein Zeugnis) mit der
-          Kamera deines Smartphones. Achte darauf, dass die ganze Seite im Bild
-          ist, und auf gute Beleuchtung, einen scharfen Fokus und einen planen
-          Aufnahmewinkel.
+          Fotografiere die gesamte Dokumentseite. Achte darauf, dass die ganze
+          Seite im Bild ist, und auf gute Beleuchtung, einen scharfen Fokus und
+          einen planen Aufnahmewinkel.
         </p>
       )}
 

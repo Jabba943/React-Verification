@@ -3,15 +3,13 @@ import "../styles/QrScanner.css";
 
 export default function QrScanner({ onScanComplete }) {
   const scannerRef = useRef(null);
-  const cleanupTimeoutRef = useRef(null); // Speichert die Verzögerung
+  const cleanupTimeoutRef = useRef(null);
 
   useEffect(() => {
-    // Falls React sofort neu startet (StrictMode), brechen wir das geplante Löschen ab!
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current);
     }
 
-    // Wenn der Scanner von der ersten Runde noch lebt, nutzen wir ihn einfach weiter
     if (scannerRef.current) return;
 
     console.log("Scanner wird initialisiert...");
@@ -55,7 +53,7 @@ export default function QrScanner({ onScanComplete }) {
             .catch((err) =>
               console.log("Scanner bereits geschlossen oder nicht aktiv", err),
             );
-          scannerRef.current = null; // Instanz freigeben
+          scannerRef.current = null;
         }
       }, 50);
     };

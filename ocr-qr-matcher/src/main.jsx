@@ -2,12 +2,11 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
 import OcrScanner from "./components/OcrScanner";
 import QrScanner from "./components/QrScanner";
-import CreateQR from "./components/CreateQR"; // NEU: Import der QR-Generierungs-Komponente
+import CreateQR from "./components/CreateQR";
 import { createHmacSHA512 } from "./scripts/crypto.js";
 import "./styles/index.css";
 
-// eslint-disable-next-line react-refresh/only-export-components
-function MainApp() {
+export function MainApp() {
   // Modus-State für das Hauptmenü ("select", "verifizieren", "ausstellen")
   const [mode, setMode] = useState("select");
 
@@ -136,7 +135,9 @@ function MainApp() {
                 {checkMatch() ? (
                   <div className="status-success">✓ ORIGINAL DOKUMENT</div>
                 ) : (
-                  <div className="status-error">❌ DOKUMENT WURDE ANGEPASST</div>
+                  <div className="status-error">
+                    ❌ DOKUMENT WURDE ANGEPASST
+                  </div>
                 )}
 
                 <p>
@@ -149,15 +150,7 @@ function MainApp() {
                 <h3>Gescannter Text aus Dokument:</h3>
                 <div className="app-output">{ocrText}</div>
 
-                <h3>QR-Code Inhalt:</h3>
-                <div className="app-output app-output--compact">
-                  {qrContent}
-                </div>
-
-                <button
-                  onClick={handleReset}
-                  className="btn btn-primary"
-                >
+                <button onClick={handleReset} className="btn btn-primary">
                   🔄 Neuen Scan starten
                 </button>
               </div>
