@@ -1,0 +1,96 @@
+.app-container {
+  font-family: "Segoe UI", sans-serif;
+  max-width: 600px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #f5f7fa;
+  color: #333;
+}
+
+.app-title {
+  text-align: center;
+}
+
+.app-box {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.app-output {
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  background: #eef2f7;
+  border-radius: 4px;
+  border: 1px solid #ccd6e0;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.app-output--compact {
+  min-height: auto;
+  font-weight: bold;
+}
+
+.hidden {
+  display: none;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.actions-row--center {
+  justify-content: center;
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 10px 5px;
+  border-radius: 4px;
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background-color: #007bff;
+}
+
+.btn-success {
+  background-color: #28a745;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+}
+
+.btn-back {
+  margin-bottom: 20px;
+}
+
+.status-success {
+  color: green;
+  font-weight: bold;
+  margin: 10px 0;
+}
+
+.status-error {
+  color: red;
+  font-weight: bold;
+  margin: 10px 0;
+}

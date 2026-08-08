@@ -4,63 +4,7 @@ import OcrScanner from "./components/OcrScanner";
 import QrScanner from "./components/QrScanner";
 import CreateQR from "./components/CreateQR"; // NEU: Import der QR-Generierungs-Komponente
 import { createHmacSHA512 } from "./scripts/crypto.js";
-
-// Einheitliche CSS-Styles direkt im File
-const styles = {
-  container: {
-    fontFamily: "'Segoe UI', sans-serif",
-    maxWidth: "600px",
-    margin: "20px auto",
-    padding: "20px",
-    backgroundColor: "#f5f7fa",
-    color: "#333",
-  },
-  box: {
-    background: "white",
-    padding: "20px",
-    borderRadius: "8px",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    marginBottom: "20px",
-    textAlign: "center",
-  },
-  output: {
-    width: "100%",
-    minHeight: "100px",
-    padding: "10px",
-    background: "#eef2f7",
-    borderRadius: "4px",
-    border: "1px solid #ccd6e0",
-    textAlign: "left",
-    boxSizing: "border-box",
-  },
-  // Basis-Button Style
-  button: {
-    padding: "10px 20px",
-    fontSize: "16px",
-    cursor: "pointer",
-    margin: "10px 5px",
-    borderRadius: "4px",
-    border: "none",
-    color: "white",
-    fontWeight: "500",
-    transition: "background-color 0.2s",
-  },
-  // Button-Farbvarianten
-  btnPrimary: { backgroundColor: "#007BFF" },
-  btnSuccess: { backgroundColor: "#28A745" },
-  btnSecondary: { backgroundColor: "#6c757d", marginBottom: "20px" },
-
-  success: {
-    color: "green",
-    fontWeight: "bold",
-    margin: "10px 0",
-  },
-  error: {
-    color: "red",
-    fontWeight: "bold",
-    margin: "10px 0",
-  },
-};
+import "./styles/index.css";
 
 // eslint-disable-next-line react-refresh/only-export-components
 function MainApp() {
@@ -82,6 +26,18 @@ function MainApp() {
     setStep(3);
   };
 
+  // Hashfunktion inkl. Textbereinigung
+  const getOcrHash = () => {
+    const textNormalisiert = ocrText.replace(/\s+/g, "");
+    return createHmacSHA512(textNormalisiert);
+  };
+
+  // Textabgleich-Funktion nutzt die Hash-Funktion
+  const checkMatch = () => {
+    const qrNormalisiert = qrContent.replace(/\s+/g, "");
+    return qrNormalisiert !== "" && getOcrHash() === qrNormalisiert;
+  };
+
   // Setzt den Scan-Vorgang zurück
   const handleReset = () => {
     setOcrText("");
@@ -95,35 +51,23 @@ function MainApp() {
     setMode("select");
   };
 
-  //Hashfunktion incl. Textbereinigung
-  const getOcrHash = () => {
-    const textNormalisiert = ocrText.replace(/\s+/g, "");
-    return createHmacSHA512(textNormalisiert);
-  };
-
-  // Textabgleich-Funktion nutzt jetzt die neue Hash-Funktion
-  const checkMatch = () => {
-    const qrNormalisiert = qrContent.replace(/\s+/g, "");
-    return qrNormalisiert !== "" && getOcrHash() === qrNormalisiert;
-  };
-
   return (
-    <div style={styles.container}>
-      <h1 style={{ textAlign: "center" }}>Dokumenten-System</h1>
+    <div className="app-container">
+      <h1 className="app-title">Dokumenten-System</h1>
 
       {/* --- STARTMENÜ --- */}
       {mode === "select" && (
-        <div style={styles.box}>
+        <div className="app-box">
           <h2>Bitte wählen Sie eine Option:</h2>
           <div>
             <button
-              style={{ ...styles.button, ...styles.btnPrimary }}
+              className="btn btn-primary"
               onClick={() => setMode("verifizieren")}
             >
               Verifizieren
             </button>
             <button
-              style={{ ...styles.button, ...styles.btnSuccess }}
+              className="btn btn-success"
               onClick={() => setMode("ausstellen")}
             >
               Ausstellen
@@ -136,30 +80,24 @@ function MainApp() {
       {mode === "ausstellen" && (
         <div>
           <button
-            style={{ ...styles.button, ...styles.btnSecondary }}
+            className="btn btn-secondary btn-back"
             onClick={handleBackToMenu}
           >
             🔙 Zurück zum Menü
           </button>
-          <h1 style={{ textAlign: "center" }}>📄 Dokument ausstellen</h1>
+          <h1 className="app-title">📄 Dokument ausstellen</h1>
 
           {step === 1 && (
-            <div style={styles.box}>
+            <div className="app-box">
               <h2>📷 Schritt 1: Dokument scannen</h2>
               <OcrScanner onScanComplete={handleOcrFinished} />
             </div>
           )}
 
           {step === 2 && (
-            <div style={styles.box}>
+            <div className="app-box">
               <h2>✨ Schritt 2: Gesicherten QR-Code generieren</h2>
-              <CreateQR
-                text={ocrText}
-                buttonStyle={styles.button}
-                primaryButtonStyle={styles.btnPrimary}
-                successButtonStyle={styles.btnSuccess}
-                onReset={handleReset}
-              />
+              <CreateQR text={ocrText} onReset={handleReset} />
             </div>
           )}
         </div>
@@ -169,22 +107,22 @@ function MainApp() {
       {mode === "verifizieren" && (
         <div>
           <button
-            style={{ ...styles.button, ...styles.btnSecondary }}
+            className="btn btn-secondary btn-back"
             onClick={handleBackToMenu}
           >
             🔙 Zurück zum Menü
           </button>
-          <h1 style={{ textAlign: "center" }}>📄 Dokument verifizieren</h1>
+          <h1 className="app-title">📄 Dokument verifizieren</h1>
 
           {step === 1 && (
-            <div style={styles.box}>
+            <div className="app-box">
               <h2>📷 Schritt 1: Dokument scannen</h2>
               <OcrScanner onScanComplete={handleOcrFinished} />
             </div>
           )}
 
           {step === 2 && (
-            <div style={styles.box}>
+            <div className="app-box">
               <h2>🔍 Schritt 2: QR-Code scannen</h2>
               <QrScanner onScanComplete={handleQrFinished} />
             </div>
@@ -192,13 +130,13 @@ function MainApp() {
 
           {step === 3 && (
             <div>
-              <div style={styles.box}>
+              <div className="app-box">
                 <h2>📊 Schritt 3: Ergebnis des Abgleichs</h2>
 
                 {checkMatch() ? (
-                  <div style={styles.success}>✓ ORIGINAL DOKUMENT</div>
+                  <div className="status-success">✓ ORIGINAL DOKUMENT</div>
                 ) : (
-                  <div style={styles.error}>❌ DOKUMENT WURDE ANGEPASST</div>
+                  <div className="status-error">❌ DOKUMENT WURDE ANGEPASST</div>
                 )}
 
                 <p>
@@ -207,24 +145,18 @@ function MainApp() {
                 </p>
               </div>
 
-              <div style={styles.box}>
+              <div className="app-box">
                 <h3>Gescannter Text aus Dokument:</h3>
-                <div style={styles.output}>{ocrText}</div>
+                <div className="app-output">{ocrText}</div>
 
                 <h3>QR-Code Inhalt:</h3>
-                <div
-                  style={{
-                    ...styles.output,
-                    minHeight: "auto",
-                    fontWeight: "bold",
-                  }}
-                >
+                <div className="app-output app-output--compact">
                   {qrContent}
                 </div>
 
                 <button
                   onClick={handleReset}
-                  style={{ ...styles.button, ...styles.btnPrimary }}
+                  className="btn btn-primary"
                 >
                   🔄 Neuen Scan starten
                 </button>

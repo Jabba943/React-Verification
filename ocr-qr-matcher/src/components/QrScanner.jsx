@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import "../styles/QrScanner.css";
 
 export default function QrScanner({ onScanComplete }) {
   const scannerRef = useRef(null);
@@ -61,25 +62,8 @@ export default function QrScanner({ onScanComplete }) {
   }, [onScanComplete]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-      }}
-    >
-      <div
-        id="reader"
-        style={{
-          width: "100%",
-          maxWidth: "500px",
-          border: "2px solid #333",
-          borderRadius: "8px",
-          overflow: "hidden",
-          background: "#fff",
-        }}
-      ></div>
+    <div className="qr-scanner-wrapper">
+      <div id="reader" className="qr-scanner-reader"></div>
     </div>
   );
 }

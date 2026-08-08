@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
+import "../styles/OcrScanner.css";
 
-// Größere Fotos bringen kaum mehr Genauigkeit, machen Tesseract aber deutlich langsamer
-const MAX_DIMENSION = 2200;
+// Größere Fotos bringen kaum mehr Genauigkeit, machen Tesseract aber deutlich
+// langsamer. Eine ganze Dokumentseite (z. B. ein Zeugnis) enthält aber mehr
+// und kleiner gedruckten Text als ein einzelnes Feld, daher braucht sie eine
+// höhere Auflösung als ein einfacher Bildausschnitt.
+const MAX_DIMENSION = 3000;
 
 // Wörter unterhalb dieser Konfidenz (0-100) sind meist Kauderwelsch aus dem
 // Bildhintergrund und werden aus dem Ergebnis entfernt.
@@ -31,7 +35,7 @@ export default function OcrScanner({ onScanComplete }) {
   const workerRef = useRef(null);
 
   const [status, setStatus] = useState(
-    "Bitte fotografiere das Dokument mit deiner Handykamera.",
+    "Bitte fotografiere die Dokumentseite (z. B. ein Zeugnis) mit deiner Handykamera.",
   );
   const [progress, setProgress] = useState(0);
   const [previewSrc, setPreviewSrc] = useState(null);
@@ -48,28 +52,6 @@ export default function OcrScanner({ onScanComplete }) {
       }
     };
   }, []);
-
-  async function getWorker() {
-    if (!workerRef.current) {
-      const worker = await window.Tesseract.createWorker(
-        "deu",
-        window.Tesseract.OEM.LSTM_ONLY,
-        {
-          logger: (m) => {
-            if (m.status === "recognizing text") {
-              setProgress(Math.round(m.progress * 100));
-            }
-          },
-        },
-      );
-      // Dokumente sind i.d.R. ein einzelner, gleichmäßiger Textblock
-      await worker.setParameters({
-        tessedit_pageseg_mode: window.Tesseract.PSM.SINGLE_BLOCK,
-      });
-      workerRef.current = worker;
-    }
-    return workerRef.current;
-  }
 
   function handleFileChange(event) {
     const file = event.target.files?.[0];
@@ -106,7 +88,32 @@ export default function OcrScanner({ onScanComplete }) {
     setPreviewSrc(null);
     setRecognizedText(null);
     setProgress(0);
-    setStatus("Bitte fotografiere das Dokument mit deiner Handykamera.");
+    setStatus(
+      "Bitte fotografiere die Dokumentseite (z. B. ein Zeugnis) mit deiner Handykamera.",
+    );
+  }
+
+  async function getWorker() {
+    if (!workerRef.current) {
+      const worker = await window.Tesseract.createWorker(
+        "deu",
+        window.Tesseract.OEM.LSTM_ONLY,
+        {
+          logger: (m) => {
+            if (m.status === "recognizing text") {
+              setProgress(Math.round(m.progress * 100));
+            }
+          },
+        },
+      );
+
+      await worker.setParameters({
+        tessedit_pageseg_mode: window.Tesseract.PSM.AUTO,
+        preserve_interword_spaces: "1",
+      });
+      workerRef.current = worker;
+    }
+    return workerRef.current;
   }
 
   async function handleRecognize() {
@@ -125,7 +132,9 @@ export default function OcrScanner({ onScanComplete }) {
         );
         setIsRecognizing(false);
       } else {
-        setStatus("Bitte den erkannten Text prüfen und bei Bedarf korrigieren.");
+        setStatus(
+          "Bitte den erkannten Text prüfen und bei Bedarf korrigieren.",
+        );
         setRecognizedText(erkannterText);
         setIsRecognizing(false);
       }
@@ -141,11 +150,12 @@ export default function OcrScanner({ onScanComplete }) {
   }
 
   return (
-    <div className="box">
+    <div className="app-box">
       {recognizedText === null && (
         <p>
-          Fotografiere das Dokument mit der Kamera deines Smartphones. Achte
-          auf gute Beleuchtung, einen scharfen Fokus und einen planen
+          Fotografiere die gesamte Dokumentseite (z. B. ein Zeugnis) mit der
+          Kamera deines Smartphones. Achte darauf, dass die ganze Seite im Bild
+          ist, und auf gute Beleuchtung, einen scharfen Fokus und einen planen
           Aufnahmewinkel.
         </p>
       )}
@@ -156,12 +166,12 @@ export default function OcrScanner({ onScanComplete }) {
         accept="image/*"
         capture="environment"
         onChange={handleFileChange}
-        style={{ display: "none" }}
+        className="hidden"
       />
 
       {recognizedText !== null ? (
-        <div style={{ textAlign: "left" }}>
-          <p style={{ textAlign: "center" }}>
+        <div className="ocr-review">
+          <p className="ocr-review-hint">
             Bitte den erkannten Text prüfen und Fehler korrigieren, bevor er
             weiterverwendet wird:
           </p>
@@ -169,51 +179,20 @@ export default function OcrScanner({ onScanComplete }) {
             value={recognizedText}
             onChange={(e) => setRecognizedText(e.target.value)}
             rows={10}
-            style={{
-              width: "100%",
-              boxSizing: "border-box",
-              padding: "10px",
-              fontFamily: "monospace",
-              fontSize: "14px",
-              borderRadius: "4px",
-              border: "1px solid #ccd6e0",
-              resize: "vertical",
-            }}
+            className="ocr-textarea"
           />
 
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              marginTop: "10px",
-              justifyContent: "center",
-            }}
-          >
+          <div className="actions-row actions-row--center">
             <button
               onClick={handleRetake}
-              style={{
-                backgroundColor: "#6c757d",
-                color: "white",
-                padding: "10px 16px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-              }}
+              className="ocr-btn ocr-btn--secondary"
             >
               🔄 Neu fotografieren
             </button>
             <button
               onClick={handleConfirmText}
               disabled={recognizedText.trim() === ""}
-              style={{
-                backgroundColor: "#28A745",
-                color: "white",
-                padding: "10px 16px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: recognizedText.trim() === "" ? "default" : "pointer",
-                opacity: recognizedText.trim() === "" ? 0.6 : 1,
-              }}
+              className="ocr-btn ocr-btn--success"
             >
               ✅ Text bestätigen
             </button>
@@ -222,64 +201,30 @@ export default function OcrScanner({ onScanComplete }) {
       ) : !previewSrc ? (
         <button
           onClick={() => fileInputRef.current?.click()}
-          style={{
-            backgroundColor: "#0066cc",
-            color: "white",
-            padding: "12px",
-            border: "none",
-            borderRadius: "4px",
-            width: "100%",
-            maxWidth: "400px",
-            cursor: "pointer",
-          }}
+          className="ocr-capture-btn"
         >
           📸 Foto aufnehmen
         </button>
       ) : (
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
+        <div className="ocr-preview-column">
           <img
             src={previewSrc}
             alt="Aufgenommenes Dokument"
-            style={{
-              width: "100%",
-              maxWidth: "400px",
-              borderRadius: "8px",
-              border: "1px solid #ccc",
-            }}
+            className="ocr-preview-image"
           />
 
-          <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+          <div className="actions-row">
             <button
               onClick={handleRetake}
               disabled={isRecognizing}
-              style={{
-                backgroundColor: "#6c757d",
-                color: "white",
-                padding: "10px 16px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: isRecognizing ? "default" : "pointer",
-              }}
+              className="ocr-btn ocr-btn--secondary"
             >
               🔄 Neu aufnehmen
             </button>
             <button
               onClick={handleRecognize}
               disabled={isRecognizing}
-              style={{
-                backgroundColor: "#28A745",
-                color: "white",
-                padding: "10px 16px",
-                border: "none",
-                borderRadius: "4px",
-                cursor: isRecognizing ? "default" : "pointer",
-              }}
+              className="ocr-btn ocr-btn--success"
             >
               🔎 Text erkennen
             </button>
@@ -288,14 +233,14 @@ export default function OcrScanner({ onScanComplete }) {
       )}
 
       {recognizedText === null && (
-        <div style={{ fontWeight: "bold", color: "#0066cc", margin: "15px 0" }}>
+        <div className="ocr-status">
           {progress > 0 && progress < 100
             ? `🔄 Erkenne Text: ${progress}%`
             : status}
         </div>
       )}
 
-      <canvas ref={canvasRef} style={{ display: "none" }} />
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }
