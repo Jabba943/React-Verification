@@ -4,6 +4,10 @@ import "../styles/OcrScanner.css";
 const MAX_DIMENSION = 3000;
 const MIN_WORD_CONFIDENCE = 40;
 
+/*
+ *       Noise-Filter für Erkannte Wörter:
+ *       Wörter mit einem Confidence-Score von unter 40 werden entfernt
+ */
 function filterLowConfidenceText(data) {
   if (!data.lines || data.lines.length === 0) {
     return data.text;
@@ -25,9 +29,7 @@ export default function OcrScanner({ onScanComplete }) {
   const canvasRef = useRef(null);
   const workerRef = useRef(null);
 
-  const [status, setStatus] = useState(
-    "Bitte fotografiere die Dokumentseite (z. B. ein Zeugnis) mit deiner Handykamera.",
-  );
+  const [status, setStatus] = useState("Bitte fotografiere das Dokument.");
   const [progress, setProgress] = useState(0);
   const [previewSrc, setPreviewSrc] = useState(null);
   const [isRecognizing, setIsRecognizing] = useState(false);
@@ -42,6 +44,11 @@ export default function OcrScanner({ onScanComplete }) {
     };
   }, []);
 
+  /*
+   *       Vorverarbeitung des aufgenommenen Fotos:
+   *       Das Bild wird geladen, bei Bedarf herunterskaliert,
+   *       in Graustufen unterteilt und der Kontrast wird erhöht.
+   */
   function handleFileChange(event) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -71,15 +78,22 @@ export default function OcrScanner({ onScanComplete }) {
     image.src = objectUrl;
   }
 
+  /*
+   *       Zurücksetzen des Scan-Vorgangs:
+   *       Programm wird auf Ursprungszustand zurückgesetzt
+   */
+
   function handleRetake() {
     setPreviewSrc(null);
     setRecognizedText(null);
     setProgress(0);
-    setStatus(
-      "Bitte fotografiere die Dokumentseite (z. B. ein Zeugnis) mit deiner Handykamera.",
-    );
+    setStatus("Bitte fotografiere das Dokument.");
   }
 
+  /*
+   *       Initialisierung des Tesseract-Workers:
+   *       Erstellung mit Sprachmodel, OCR-Modell und PageSeg-Mode.
+   */
   async function getWorker() {
     if (!workerRef.current) {
       const worker = await window.Tesseract.createWorker(
@@ -102,6 +116,13 @@ export default function OcrScanner({ onScanComplete }) {
     }
     return workerRef.current;
   }
+
+  /*
+   *   Texterkennung des Dokuments:
+   *   Text des Dokuments wird mittels OCR erkannt. Ergebniss wird mittels
+   *   filterLowConfidenceText gefiltert und anschließend dem Nutzer
+   *   angezeigt.
+   */
 
   async function handleRecognize() {
     setIsRecognizing(true);
@@ -132,6 +153,11 @@ export default function OcrScanner({ onScanComplete }) {
     }
   }
 
+  /*
+   *       Bestätigung des geprüften Textes:
+   *       Übergabe des Textes für späteren Programmverlauf
+   */
+
   function handleConfirmText() {
     onScanComplete(recognizedText);
   }
@@ -140,9 +166,8 @@ export default function OcrScanner({ onScanComplete }) {
     <div className="app-box">
       {recognizedText === null && (
         <p>
-          Fotografiere die gesamte Dokumentseite. Achte darauf, dass die ganze
-          Seite im Bild ist, und auf gute Beleuchtung, einen scharfen Fokus und
-          einen planen Aufnahmewinkel.
+          Achte darauf, dass die ganze Seite im Bild ist, und auf gute
+          Beleuchtung, einen scharfen Fokus und einen planen Aufnahmewinkel.
         </p>
       )}
 
@@ -158,8 +183,7 @@ export default function OcrScanner({ onScanComplete }) {
       {recognizedText !== null ? (
         <div className="ocr-review">
           <p className="ocr-review-hint">
-            Bitte den erkannten Text prüfen und Fehler korrigieren, bevor er
-            weiterverwendet wird:
+            Bitte den erkannten Text prüfen und Fehler korrigieren:
           </p>
           <textarea
             value={recognizedText}

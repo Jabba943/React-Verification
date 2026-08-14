@@ -7,6 +7,12 @@ function CreateQR({ text, onReset }) {
   const [qrSrc, setQrSrc] = useState("");
   const [generatedHash, setGeneratedHash] = useState("");
 
+  /*
+   *       QR-Code-Generierung:
+   *       Erkannte Text wird normalisiert und per HMAC-SHA512 gehasht.
+   *       Der Tag wird anschließend in einem QR-Code gespeichert.
+   */
+
   const handleGenerate = async () => {
     if (!text) return;
 
@@ -28,6 +34,11 @@ function CreateQR({ text, onReset }) {
     }
   };
 
+  /*
+   *       QR-Code herunterladen:
+   *       Ermöglicht Download des QR-Codes in PNG Form
+   */
+
   const downloadQrCode = () => {
     if (!qrSrc) return;
 
@@ -46,7 +57,7 @@ function CreateQR({ text, onReset }) {
 
       {!qrSrc ? (
         <button onClick={handleGenerate} className="btn btn-primary">
-          🔒 Verschlüsselten QR-Code generieren
+          🔒 QR-Code generieren
         </button>
       ) : (
         <div>

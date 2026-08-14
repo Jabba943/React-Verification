@@ -5,26 +5,35 @@ export default function QrScanner({ onScanComplete }) {
   const scannerRef = useRef(null);
   const cleanupTimeoutRef = useRef(null);
 
+  /*
+   *       Initialisierung des QR-Scanners:
+   *       Bricht einen evtl. noch laufenden Cleanup-Timeout ab, erstellt
+   *       (falls noch nicht vorhanden) einen Html5QrcodeScanner und startet
+   *       ihn; beim Verlassen der Komponente wird der Scanner verzögert
+   *       wieder beendet
+   */
   useEffect(() => {
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current);
     }
-
     if (scannerRef.current) return;
-
     console.log("Scanner wird initialisiert...");
-
     const html5QrcodeScanner = new window.Html5QrcodeScanner(
       "reader",
       {
         fps: 10,
         qrbox: { width: 250, height: 250 },
       },
-      /* verbose= */ false,
+      false,
     );
 
     scannerRef.current = html5QrcodeScanner;
 
+    /*
+     *       Erfolgreicher Scan:
+     *        Stopp nach erfolgreichem Abschluss des Scans den Ablauf
+     *        und übergibt den Inhalt für späteren Abgleich an onScanComplete.
+     */
     function onScanSuccess(decodedText) {
       console.log(`QR-Code erfolgreich gescannt! Inhalt: ${decodedText}`);
 
